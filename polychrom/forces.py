@@ -166,32 +166,125 @@ def harmonic_bonds(
     name="harmonic_bonds",
     override_checks=False,
 ):
-    """Adds harmonic bonds.
-
-    Bonds are parametrized in the following way.
-
-    * A length of a bond at rest is `bondLength`
-    * Bond energy equal to 1kT at bondWiggleDistance
-
-    Note that bondWiggleDistance is not the standard deviation of the bond extension:
-    that is actually smaller by a factor of sqrt(2).
-
-
+    """
+    Add harmonic bonds between specified particle pairs.
+    
+    Harmonic bonds are the most common way to maintain polymer chain connectivity.
+    They create spring-like connections between particles with a quadratic energy
+    penalty for deviations from the rest length. The force is linear in displacement.
+    
+    The parametrization is designed to be intuitive:
+    - bondLength: the preferred distance between bonded particles
+    - bondWiggleDistance: the distance scale at which thermal energy (kT) 
+      equals the bonding energy
+    
     Parameters
     ----------
-
-    bonds : iterable of (int, int)
-        Pairs of particle indices to be connected with a bond.
-    bondWiggleDistance : float or iterable of float
-        Distance at which bond energy equals kT.
-        Can be provided per-particle.
-        If 0 then set k=0.
-    bondLength : float or iterable of float
-        The length of the bond.
-        Can be provided per-particle.
-    override_checks: bool
-        If True then do not check that no bonds are repeated.
-        False by default.
+    sim_object : polychrom.simulation.Simulation
+        The simulation object to add bonds to
+        
+    bonds : list of (int, int) tuples
+        Pairs of particle indices to connect with harmonic bonds.
+        Each tuple (i, j) creates a bond between particles i and j.
+        
+    bondWiggleDistance : float or array-like, optional
+        Distance at which bond energy equals kT (thermal energy).
+        This controls bond flexibility - smaller values create stiffer bonds.
+        - 0.01: very stiff bonds, little thermal fluctuation
+        - 0.05: moderate flexibility (default, good for chromatin)
+        - 0.1: flexible bonds, large thermal fluctuations
+        Can be provided per-bond as an array of length len(bonds).
+        If 0, the bond force constant is set to 0 (no force).
+        
+    bondLength : float or array-like, optional  
+        Rest length of the harmonic bonds in nanometers.
+        This is the preferred distance between bonded particles.
+        Can be provided per-bond as an array of length len(bonds).
+        Default: 1.0 (appropriate for chromatin at ~2kb/monomer resolution)
+        
+    name : str, optional
+        Unique identifier for this force within the simulation.
+        Default: "harmonic_bonds"
+        
+    override_checks : bool, optional
+        If True, skip validation that no bonds are repeated.
+        Only set to True if you're certain bonds are unique.
+        Default: False (perform validation)
+        
+    Returns
+    -------
+    openmm.HarmonicBondForce
+        The configured harmonic bond force ready to add to simulation
+        
+    Examples
+    --------
+    Basic linear chain connectivity:
+    
+    >>> bonds = [(i, i+1) for i in range(999)]  # Connect 1000 particles in chain
+    >>> force = forces.harmonic_bonds(sim, bonds)
+    >>> sim.add_force(force)
+    
+    Stiff bonds for stable structure:
+    
+    >>> force = forces.harmonic_bonds(
+    ...     sim, bonds, bondWiggleDistance=0.01, bondLength=1.5
+    ... )
+    >>> sim.add_force(force)
+    
+    Variable bond properties:
+    
+    >>> bond_lengths = [1.0, 1.2, 0.8, 1.0]  # Different rest lengths
+    >>> bond_flexibility = [0.05, 0.1, 0.03, 0.05]  # Different stiffnesses
+    >>> force = forces.harmonic_bonds(
+    ...     sim, bonds[:4], 
+    ...     bondLength=bond_lengths,
+    ...     bondWiggleDistance=bond_flexibility
+    ... )
+    >>> sim.add_force(force)
+    
+    Ring closure (connect first and last particles):
+    
+    >>> linear_bonds = [(i, i+1) for i in range(99)]
+    >>> ring_bond = [(99, 0)]  # Close the ring
+    >>> all_bonds = linear_bonds + ring_bond
+    >>> force = forces.harmonic_bonds(sim, all_bonds)
+    >>> sim.add_force(force)
+    
+    Notes
+    -----
+    Physics and Energy:
+    - Harmonic potential: U(r) = (k/2) * (r - r₀)²
+    - Force: F(r) = -k * (r - r₀)
+    - Spring constant: k = kT / (bondWiggleDistance)²
+    - Standard deviation of bond length: σ = bondWiggleDistance / √2
+    
+    Practical Guidelines:
+    - For chromatin: bondLength=1.0, bondWiggleDistance=0.05
+    - For DNA: bondLength=0.34, bondWiggleDistance=0.01 
+    - For synthetic polymers: bondLength=1.5, bondWiggleDistance=0.1
+    
+    Performance:
+    - Harmonic bonds are computationally efficient
+    - Large numbers of bonds (>10⁴) have minimal performance impact
+    - Bond forces are local and parallelize well on GPUs
+    
+    Validation:
+    - Automatically checks for duplicate bonds (can be disabled)
+    - Validates that particle indices are within system bounds
+    - Ensures all parameters have compatible dimensions
+    
+    See Also
+    --------
+    constant_force_bonds : Alternative bond type with constant force
+    angle_force : Bending forces between three consecutive particles
+    forcekits.polymer_chains : Convenient combination of bonds, angles, and repulsion
+    
+    Raises
+    ------
+    ValueError
+        If particle indices exceed system size
+        If duplicate bonds are detected (when override_checks=False)
+        If parameter arrays don't match number of bonds
     """
 
     # check for repeated bonds
@@ -771,27 +864,122 @@ def spherical_confinement(
     particles=None,
     name="spherical_confinement",
 ):
-    """Constrain particles to be within a sphere.
-    With no parameters creates sphere with density .3
-
+    """
+    Constrain particles within or outside a spherical boundary.
+    
+    This force creates a spherical confinement that mimics cellular compartments
+    like the nuclear envelope. Particles experience an increasing repulsive force
+    as they approach the boundary, with the steepness controlled by parameter k.
+    
+    The radius can be explicitly set or automatically calculated based on a target
+    density. This is particularly useful for chromatin simulations where you want
+    to model realistic nuclear crowding.
+    
     Parameters
     ----------
+    sim_object : polychrom.simulation.Simulation
+        The simulation object to add this force to
+        
     r : float or "density", optional
-        Radius of confining sphere. If "density" requires density,
-        or assumes density = .3
+        Radius of the confining sphere in nanometers. 
+        - If float: explicit radius value
+        - If "density": automatically calculated from density parameter
+        Default: "density" (uses density=0.3)
+        
     k : float, optional
-        Steepness of the confining potential, in kT/nm
-    density : float, optional, <1
-        Density for autodetection of confining radius.
-        Density is calculated in particles per nm^3,
-        i.e. at density 1 each sphere has a 1x1x1 cube.
-    center : [float, float, float]
-        The coordinates of the center of the sphere.
-    invert : bool
-        If True, particles are not confinded, but *excluded* from the sphere.
-    particles : list of int
-        The list of particles affected by the force.
-        If None, apply the force to all particles.
+        Steepness of the confining potential in kT/nm. Higher values create
+        sharper boundaries but may require smaller timesteps for stability.
+        - k=1: soft boundary, gentle confinement
+        - k=5: medium steepness (default)
+        - k=20: sharp boundary, strong confinement
+        
+    density : float, optional
+        Target density for automatic radius calculation, in particles per nm³.
+        Only used when r="density". At density=1, each particle occupies ~1 nm³.
+        - density=0.1: loose packing, large nucleus
+        - density=0.3: typical chromatin density (default)
+        - density=1.0: dense packing, compact nucleus
+        
+    center : list of float, optional
+        Coordinates [x, y, z] of the sphere center in nanometers.
+        Default: [0, 0, 0] (origin)
+        
+    invert : bool, optional
+        If True, particles are excluded from (rather than confined to) the sphere.
+        Useful for modeling nuclear pores or excluded regions.
+        Default: False (normal confinement)
+        
+    particles : list of int, optional
+        Indices of particles affected by this force.
+        If None, applies to all particles.
+        Default: None (all particles)
+        
+    name : str, optional
+        Name identifier for this force. Must be unique within the simulation.
+        Default: "spherical_confinement"
+        
+    Returns
+    -------
+    openmm.CustomExternalForce
+        The configured confinement force ready to add to simulation
+        
+    Examples
+    --------
+    Basic spherical confinement (automatic radius):
+    
+    >>> force = forces.spherical_confinement(sim, density=0.5, k=10)
+    >>> sim.add_force(force)
+    
+    Explicit radius with soft boundaries:
+    
+    >>> force = forces.spherical_confinement(sim, r=15.0, k=1.0)
+    >>> sim.add_force(force)
+    
+    Off-center confinement:
+    
+    >>> force = forces.spherical_confinement(
+    ...     sim, r=20.0, center=[5, 0, -2], k=5
+    ... )
+    >>> sim.add_force(force)
+    
+    Exclusion sphere (particles avoid region):
+    
+    >>> force = forces.spherical_confinement(
+    ...     sim, r=5.0, invert=True, k=20
+    ... )
+    >>> sim.add_force(force)
+    
+    Confine only specific particles:
+    
+    >>> force = forces.spherical_confinement(
+    ...     sim, density=0.3, particles=[0, 1, 2, 100, 101]
+    ... )
+    >>> sim.add_force(force)
+    
+    Notes
+    -----
+    - The force formula creates a smooth potential that approaches infinity
+      at the boundary, preventing particles from crossing
+    - Automatic radius calculation: r = (3*N/(4*π*density))^(1/3)
+    - Higher k values may require smaller integration timesteps
+    - The simulation object gains attribute 'sphericalConfinementRadius'
+    - Force energy is in units of kT (thermal energy)
+    
+    Physics Notes
+    -------------
+    The confining potential has the form:
+    U(r) = k * kT * (sqrt((r-a)² + t²) - t)  for r > a
+    
+    Where:
+    - r is distance from center
+    - a = radius - 1/k (effective boundary position)  
+    - t = 1/(10*k) (smoothing parameter)
+    - The potential is approximately linear near the boundary
+    
+    See Also
+    --------
+    cylindrical_confinement : Confinement to cylindrical geometry
+    spherical_well : Attractive spherical potential
     """
 
     force = openmm.CustomExternalForce(

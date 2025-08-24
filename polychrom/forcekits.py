@@ -36,30 +36,193 @@ def polymer_chains(
     extra_triplets=None,
     override_checks=False,
 ):
-    """Adds harmonic bonds connecting polymer chains
-
+    """
+    Set up complete polymer chain physics with bonds, angles, and repulsion.
+    
+    This is the most commonly used forcekit in polychrom. It creates a complete
+    polymer physics model by combining three essential force types:
+    1. Harmonic bonds - maintain chain connectivity
+    2. Angle forces - provide chain stiffness and persistence length  
+    3. Non-bonded forces - excluded volume repulsion between monomers
+    
+    The forcekit automatically handles bond topology, neighbor exclusions, and
+    parameter consistency. It's designed to work out-of-the-box for typical
+    chromatin simulations while allowing full customization of individual components.
+    
     Parameters
     ----------
-    chains: list of tuples
-        The list of chains in format [(start, end, isRing)]. The particle
-        range should be semi-open, i.e. a chain (0,3,0) links
-        the particles 0, 1 and 2. If bool(isRing) is True than the first
-        and the last particles of the chain are linked into a ring.
-        The default value links all particles of the system into one chain.
-
-    except_bonds : bool
-        If True then do not calculate non-bonded forces between the
-        particles connected by a bond. True by default.
-
-    extra_bonds : None or list
-        [(i,j)] list of extra bonds. Same for extra_triplets.
-
-    override_checks: bool
-        If True then do not check that all monomers are a member of exactly
-        one chain. False by default. Note that overriding checks does not
-        get automatically "passed on" to bond/angle force functions so you
-        may need to specify override_checks=True in the respective kwargs
-        as well.
+    sim_object : polychrom.simulation.Simulation
+        The simulation object to add forces to
+        
+    chains : list of tuples, optional
+        Chain topology specification as [(start, end, isRing), ...].
+        Each tuple defines one polymer chain:
+        - start: first particle index (inclusive)
+        - end: last particle index (exclusive, or None for system end)
+        - isRing: True to connect first and last particles
+        Examples:
+        - [(0, None, False)]: Single linear chain, all particles (default)
+        - [(0, 50, True), (50, None, False)]: 50-particle ring + linear chain
+        - [(0, 100, False), (100, 200, False)]: Two separate linear chains
+        
+    bond_force_func : function, optional
+        Function to create bond forces. Default: forces.harmonic_bonds
+        Must accept (sim_object, bonds, **kwargs) and return OpenMM force
+        
+    bond_force_kwargs : dict, optional
+        Parameters passed to bond_force_func. Default: 
+        {"bondWiggleDistance": 0.05, "bondLength": 1.0}
+        Common adjustments:
+        - bondWiggleDistance: 0.01-0.1 (stiffness)
+        - bondLength: 0.5-2.0 (rest length)
+        
+    angle_force_func : function, optional
+        Function to create angle forces. Default: forces.angle_force
+        Must accept (sim_object, triplets, **kwargs) and return OpenMM force
+        Set to None to disable angle forces
+        
+    angle_force_kwargs : dict, optional
+        Parameters passed to angle_force_func. Default: {"k": 0.05}
+        - k: 0.01-10 (angular stiffness, controls persistence length)
+        
+    nonbonded_force_func : function, optional
+        Function for non-bonded repulsion. Default: forces.polynomial_repulsive  
+        Must accept (sim_object, **kwargs) and return OpenMM force
+        Set to None to disable non-bonded forces
+        
+    nonbonded_force_kwargs : dict, optional
+        Parameters for non-bonded forces. Default: {"trunc": 3.0, "radiusMult": 1.0}
+        - trunc: 1.0-10.0 (repulsion cutoff, affects chain crossing)
+        - radiusMult: 0.5-2.0 (effective particle size)
+        
+    except_bonds : bool, optional
+        If True, exclude bonded neighbors from non-bonded interactions.
+        This prevents double-counting of forces and is almost always desired.
+        Default: True
+        
+    extra_bonds : list of tuples, optional
+        Additional bonds beyond chain connectivity, as [(i,j), ...].
+        Useful for crosslinks, loops, or constraints.
+        Default: None
+        
+    extra_triplets : list of tuples, optional
+        Additional angle triplets as [(i,j,k), ...] where j is the central particle.
+        Default: None
+        
+    override_checks : bool, optional
+        Skip validation that all particles belong to exactly one chain.
+        Only set True if you know your topology is correct.
+        Default: False
+        
+    Returns
+    -------
+    list of openmm.Force
+        List of force objects (bonds, angles, non-bonded) ready to add to simulation
+        
+    Examples
+    --------
+    Basic linear polymer (most common usage):
+    
+    >>> forces = forcekits.polymer_chains(sim)
+    >>> sim.add_force(forces)
+    
+    Stiff polymer with strong repulsion:
+    
+    >>> forces = forcekits.polymer_chains(
+    ...     sim,
+    ...     bond_force_kwargs={"bondWiggleDistance": 0.01},
+    ...     angle_force_kwargs={"k": 5.0},
+    ...     nonbonded_force_kwargs={"trunc": 10.0}
+    ... )
+    >>> sim.add_force(forces)
+    
+    Multiple chains:
+    
+    >>> forces = forcekits.polymer_chains(
+    ...     sim,
+    ...     chains=[(0, 500, False), (500, 1000, False)]  # Two 500-monomer chains
+    ... )
+    >>> sim.add_force(forces)
+    
+    Ring polymer:
+    
+    >>> forces = forcekits.polymer_chains(
+    ...     sim,
+    ...     chains=[(0, None, True)]  # Single ring
+    ... )
+    >>> sim.add_force(forces)
+    
+    Custom bond types:
+    
+    >>> from polychrom.forces import constant_force_bonds
+    >>> forces = forcekits.polymer_chains(
+    ...     sim,
+    ...     bond_force_func=constant_force_bonds,
+    ...     bond_force_kwargs={"bondWiggleDistance": 0.1}
+    ... )
+    >>> sim.add_force(forces)
+    
+    No angle forces (very flexible chain):
+    
+    >>> forces = forcekits.polymer_chains(
+    ...     sim,
+    ...     angle_force_func=None
+    ... )
+    >>> sim.add_force(forces)
+    
+    Add crosslinks:
+    
+    >>> crosslinks = [(0, 100), (50, 150), (200, 300)]
+    >>> forces = forcekits.polymer_chains(
+    ...     sim,
+    ...     extra_bonds=crosslinks
+    ... )
+    >>> sim.add_force(forces)
+    
+    Notes
+    -----
+    Physical Interpretation:
+    - Bond forces maintain chain connectivity (covalent bonds)
+    - Angle forces provide persistence length (chain stiffness) 
+    - Non-bonded forces prevent overlap (excluded volume)
+    - Together they create realistic polymer physics
+    
+    Parameter Guidelines:
+    - For chromatin: default parameters work well
+    - For DNA: bondLength=0.34, angle k=50, trunc=2.0
+    - For synthetic polymers: bondLength=1.5, k=1.0, trunc=5.0
+    - For very flexible chains: k=0.1, trunc=3.0
+    - For rigid chains: k=10, bondWiggleDistance=0.01
+    
+    Performance:
+    - Most computationally expensive part is usually non-bonded forces
+    - Reducing trunc improves performance but allows chain crossing
+    - Angle forces have minimal computational cost
+    - Bond forces are very fast
+    
+    Topology Validation:
+    - Checks that every particle belongs to exactly one chain
+    - Prevents gaps or overlaps in chain definition  
+    - Can be disabled with override_checks=True for complex topologies
+    
+    Force Exclusions:
+    - Bonded neighbors automatically excluded from non-bonded forces
+    - Prevents unphysical strong repulsion between connected particles
+    - Essential for stable simulations
+    
+    See Also
+    --------
+    forces.harmonic_bonds : Individual bond force
+    forces.angle_force : Individual angle force  
+    forces.polynomial_repulsive : Individual non-bonded force
+    starting_conformations : Functions to create initial polymer configurations
+    
+    Raises
+    ------
+    ValueError
+        If particles don't belong to exactly one chain
+        If chain indices are out of bounds
+        If invalid force functions are provided
     """
 
     force_list = []
