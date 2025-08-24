@@ -29,10 +29,7 @@ from pathlib import Path
 
 import numpy as np
 import openmm
-try:
-    import openmm.unit as unit
-except ImportError:
-    from simtk import unit
+import openmm.unit as unit
 
 import polychrom
 from polychrom import forcekits, forces, simulation, starting_conformations

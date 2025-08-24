@@ -48,10 +48,7 @@ import numpy as np
 import openmm as mm
 from openmmtools import utils
 from openmmtools.integrators import PrettyPrintableIntegrator
-try:
-    import openmm.unit as unit
-except ImportError:
-    from simtk import unit
+import openmm.unit as unit
 
 
 class ActiveBrownianIntegrator(utils.RestorableOpenMMObject, PrettyPrintableIntegrator, mm.CustomIntegrator):
@@ -59,9 +56,9 @@ class ActiveBrownianIntegrator(utils.RestorableOpenMMObject, PrettyPrintableInte
 
     Parameters
     ----------
-    timestep : float or simtk.unit.Quantity
+    timestep : float or openmm.unit.Quantity
         time step in units of femtoseconds
-    collision_rate : float or simtk.unit.Quantity
+    collision_rate : float or openmm.unit.Quantity
         friction coefficient governing collisions with solvent, in units of inverse picoseconds
     particleD: (N, 3) array-like
         diffusion coefficients of N monomers in x,y,z directions in units of kT/(collision_rate * mass)
@@ -94,9 +91,9 @@ class CorrelatedNoiseIntegrator(utils.RestorableOpenMMObject, PrettyPrintableInt
 
     Parameters
     ----------
-    timestep : float or simtk.unit.Quantity
+    timestep : float or openmm.unit.Quantity
         time step in units of femtoseconds
-    collision_rate : float or simtk.unit.Quantity
+    collision_rate : float or openmm.unit.Quantity
         friction coefficient governing collisions with solvent, in units of inverse picoseconds
     particleD: (N, 3) array-like
         diffusion coefficients of N monomers in units of kT/(collision_rate * mass)
