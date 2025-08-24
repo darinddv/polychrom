@@ -20,6 +20,8 @@ Polychrom is a powerful Python library for simulating polymer dynamics, specific
 
 ### 🚀 Quick Start
 
+**Try it immediately**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/darinddv/polychrom/blob/master/tutorials/01_basic_polymer_simulation.ipynb) **← Start here for interactive learning!**
+
 ```python
 import polychrom
 from polychrom import forcekits, forces, simulation, starting_conformations
@@ -53,6 +55,11 @@ reporter.dump_data()
 **Comprehensive documentation**: https://polychrom.readthedocs.io/en/latest/
 
 **Getting started**: Check out our [quickstart guide](https://polychrom.readthedocs.io/en/latest/quickstart.html) for a step-by-step tutorial.
+
+**Interactive Google Colab Tutorials** 🚀:
+- **Basic polymer simulation**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/darinddv/polychrom/blob/master/tutorials/01_basic_polymer_simulation.ipynb) - Learn polychrom fundamentals with hands-on simulation
+- **Loop extrusion modeling**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/darinddv/polychrom/blob/master/tutorials/02_loop_extrusion_simulation.ipynb) - Model cohesin-mediated chromatin organization  
+- **Contact map analysis**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/darinddv/polychrom/blob/master/tutorials/03_contact_map_analysis.ipynb) - Analyze Hi-C-like contact maps from simulations
 
 **Key examples**:
 - **Basic polymer simulation**: [`examples/example/example.py`](examples/example/example.py) - Simple polymer in spherical confinement
@@ -154,4 +161,7 @@ polychrom/
 └── starting_conformations.py # Initial configs
 ```
 
-**Next steps**: Dive into the [quickstart guide](https://polychrom.readthedocs.io/en/latest/quickstart.html) to learn polychrom fundamentals, or explore the [loop extrusion examples](examples/loopExtrusion/) to see polychrom's specialized capabilities in action.
+**Next steps**: 
+- 🚀 **New to polychrom?** Start with our [interactive Google Colab tutorials](tutorials/) - no installation required!
+- 📖 **Comprehensive guide**: Check the [quickstart guide](https://polychrom.readthedocs.io/en/latest/quickstart.html) 
+- 🧬 **Advanced examples**: Explore [loop extrusion examples](examples/loopExtrusion/) for specialized capabilities
