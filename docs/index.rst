@@ -90,6 +90,8 @@ Documentation
    :maxdepth: 2   
    
    quickstart
+   best_practices
+   troubleshooting
    polychrom.simulation
    polychrom.forces
    polychrom.forcekits

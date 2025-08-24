@@ -384,25 +384,70 @@ class Simulation(object):
         return to_ret
 
     def set_data(self, data, center=False, random_offset=1e-5, report=True):
-        """Sets particle positions
-
+        """
+        Sets the initial positions of all particles in the simulation.
+        
+        This method loads particle coordinates into the simulation. It's typically
+        called once before running simulation blocks to establish the starting
+        conformation. The coordinates can be centered, randomized slightly to
+        avoid numerical issues, and are automatically converted to appropriate units.
+        
         Parameters
         ----------
-
-        data : Nx3 array-like
-            Array of positions
-
+        data : array-like, shape (N, 3)
+            Array of particle positions where N is the number of particles.
+            Each row represents one particle's (x, y, z) coordinates.
+            Units are assumed to be in nanometers.
+            
         center : bool or "zero", optional
-            Move center of mass to zero before starting the simulation
-            if center == "zero", then center the data such as all positions are positive and start at zero
-
-        random_offset: float or None
-            add random offset to each particle
-            Recommended for integer starting conformations and in general
-
+            Controls centering of the coordinate system:
+            - True: Move center of mass to origin (0, 0, 0)
+            - "zero": Shift coordinates so minimum values are at origin
+            - False: Keep original coordinates (default)
+            
+        random_offset : float or None, optional
+            Add small random displacement to each particle coordinate.
+            Recommended value: 1e-5 (default). This prevents numerical
+            issues that can arise from perfectly aligned starting positions,
+            especially when using integer coordinates. Set to None to disable.
+            
         report : bool, optional
-            If set to False, will not report this action to reporters.
-
+            Whether to report this action to attached reporters (default: True).
+            Set to False if loading intermediate states during simulation.
+            
+        Examples
+        --------
+        Load a random walk conformation:
+        
+        >>> from polychrom import starting_conformations
+        >>> polymer = starting_conformations.grow_cubic(1000, 50)
+        >>> sim.set_data(polymer, center=True)
+        
+        Load specific coordinates:
+        
+        >>> positions = np.random.random((1000, 3)) * 10  # Random positions
+        >>> sim.set_data(positions, center=True, random_offset=1e-5)
+        
+        Load from saved trajectory:
+        
+        >>> import polychrom.hdf5_format as h5f
+        >>> data = h5f.load_URI("trajectory")
+        >>> sim.set_data(data['pos'][0], center=False)  # First frame
+        
+        Notes
+        -----
+        - Must be called before running simulation blocks
+        - Coordinates are automatically converted to OpenMM units (nanometers)
+        - Random offset helps avoid simulation instabilities
+        - Centering is often useful for spherical confinement forces
+        - This method can be called multiple times to restart simulations
+        
+        Raises
+        ------
+        ValueError
+            If data length doesn't match number of particles (N)
+            If data is not shaped as (N, 3)
+            If data contains NaN values
         """
 
         data = np.asarray(data, dtype="float")
@@ -479,7 +524,52 @@ class Simulation(object):
 
     def add_force(self, force):
         """
-        Adds a force or a forcekit to the system.
+        Adds a force or forcekit to the simulation system.
+        
+        Forces define the physical interactions in your simulation and must be added
+        before running any simulation blocks. Forces can be individual force objects
+        from polychrom.forces or combined forcekits from polychrom.forcekits.
+        
+        Parameters
+        ----------
+        force : openmm.Force, list of forces, or polychrom forcekit
+            Force object(s) to add to the simulation. Can be:
+            - Single force from polychrom.forces (e.g. spherical_confinement)
+            - Forcekit from polychrom.forcekits (e.g. polymer_chains)
+            - List of forces (will be added recursively)
+            
+        Examples
+        --------
+        Adding individual forces:
+        
+        >>> sim.add_force(forces.spherical_confinement(sim, density=0.85))
+        >>> sim.add_force(forces.harmonic_bonds(sim, bonds=[[0,1], [1,2]]))
+        
+        Adding a forcekit (multiple forces combined):
+        
+        >>> sim.add_force(forcekits.polymer_chains(sim))
+        
+        Adding multiple forces at once:
+        
+        >>> force_list = [
+        ...     forces.spherical_confinement(sim, density=0.85),
+        ...     forces.harmonic_bonds(sim, bonds=bonds)
+        ... ]
+        >>> sim.add_force(force_list)
+        
+        Notes
+        -----
+        - Forces cannot be added after the simulation context is created
+        - Each force must have a unique name (automatically assigned)
+        - Forces are applied when you run the first simulation block
+        - Order of force addition generally doesn't matter for final results
+        
+        Raises
+        ------
+        ValueError
+            If a force with the same name is added twice
+        RuntimeError
+            If forces are added after the simulation context is created
         """
         if isinstance(force, Iterable):
             for f in force:
