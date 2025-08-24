@@ -63,10 +63,10 @@ import numpy as np
 
 try:
     import openmm
+    import openmm.unit as unit
 except Exception:
     import simtk.openmm as openmm
-
-import simtk.unit
+    import unit as unit
 
 
 def _prepend_force_name_to_params(force):
@@ -841,11 +841,11 @@ def cylindrical_confinement(sim_object, r, bottom=None, k=0.1, top=9999, name="c
     for i in range(sim_object.N):
         force.addParticle(i, [])
 
-    force.addGlobalParameter("k", k / simtk.unit.nanometer)
+    force.addGlobalParameter("k", k / unit.nanometer)
     force.addGlobalParameter("r", r * sim_object.conlen)
     force.addGlobalParameter("kt", sim_object.kT)
-    force.addGlobalParameter("t", 0.1 / k * simtk.unit.nanometer)
-    force.addGlobalParameter("tt", 0.01 * simtk.unit.nanometer)
+    force.addGlobalParameter("t", 0.1 / k * unit.nanometer)
+    force.addGlobalParameter("tt", 0.01 * unit.nanometer)
     force.addGlobalParameter("top", top * sim_object.conlen)
     if bottom is not None:
         force.addGlobalParameter("bottom", bottom * sim_object.conlen)
@@ -998,15 +998,15 @@ def spherical_confinement(
     if sim_object.verbose:
         print("Spherical confinement with radius = %lf" % r)
     # assigning parameters of the force
-    force.addGlobalParameter("kb", k * sim_object.kT / simtk.unit.nanometer)
-    force.addGlobalParameter("aa", (r - 1.0 / k) * simtk.unit.nanometer)
-    force.addGlobalParameter("t", (1.0 / k) * simtk.unit.nanometer / 10.0)
-    force.addGlobalParameter("tt", 0.01 * simtk.unit.nanometer)
+    force.addGlobalParameter("kb", k * sim_object.kT / unit.nanometer)
+    force.addGlobalParameter("aa", (r - 1.0 / k) * unit.nanometer)
+    force.addGlobalParameter("t", (1.0 / k) * unit.nanometer / 10.0)
+    force.addGlobalParameter("tt", 0.01 * unit.nanometer)
     force.addGlobalParameter("invert_sign", (-1) if invert else 1)
 
-    force.addGlobalParameter("x0", center[0] * simtk.unit.nanometer)
-    force.addGlobalParameter("y0", center[1] * simtk.unit.nanometer)
-    force.addGlobalParameter("z0", center[2] * simtk.unit.nanometer)
+    force.addGlobalParameter("x0", center[0] * unit.nanometer)
+    force.addGlobalParameter("y0", center[1] * unit.nanometer)
+    force.addGlobalParameter("z0", center[2] * unit.nanometer)
 
     # TODO: move 'r' elsewhere?..
     sim_object.sphericalConfinementRadius = r
@@ -1100,7 +1100,7 @@ def tether_particles(sim_object, particles, *, pbc=False, k=30, positions="curre
     else:
         kx, ky, kz = k, k, k
 
-    nm2 = simtk.unit.nanometer * simtk.unit.nanometer
+    nm2 = unit.nanometer * unit.nanometer
     force.addGlobalParameter("kx", kx * sim_object.kT / nm2)
     force.addGlobalParameter("ky", ky * sim_object.kT / nm2)
     force.addGlobalParameter("kz", kz * sim_object.kT / nm2)
@@ -1114,7 +1114,7 @@ def tether_particles(sim_object, particles, *, pbc=False, k=30, positions="curre
     if positions == "current":
         positions = [sim_object.data[i] for i in particles]
     else:
-        positions = simtk.unit.Quantity(positions, simtk.unit.nanometer)
+        positions = unit.Quantity(positions, unit.nanometer)
 
     # adding all the particles on which force acts
     for i, pos in zip(particles, positions):

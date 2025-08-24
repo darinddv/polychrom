@@ -48,7 +48,10 @@ import numpy as np
 import openmm as mm
 from openmmtools import utils
 from openmmtools.integrators import PrettyPrintableIntegrator
-from simtk import unit
+try:
+    import openmm.unit as unit
+except ImportError:
+    from simtk import unit
 
 
 class ActiveBrownianIntegrator(utils.RestorableOpenMMObject, PrettyPrintableIntegrator, mm.CustomIntegrator):

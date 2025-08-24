@@ -71,7 +71,10 @@ to be the diameter of the monomer = 1 nm.
 
 
 import numpy as np
-from simtk import unit
+try:
+    import openmm.unit as unit
+except ImportError:
+    from simtk import unit
 
 
 class SimulationParams(object):
