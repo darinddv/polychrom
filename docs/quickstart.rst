@@ -19,7 +19,13 @@ Key features:
 Installation
 ------------
 
-First, install the dependencies. OpenMM is required and best installed via conda::
+First, install the dependencies. OpenMM is required and best installed via conda.
+
+For OpenMM 8+ (recommended)::
+
+    conda install -c conda-forge openmm
+
+For compatibility with older systems::
 
     conda install -c omnia openmm
 

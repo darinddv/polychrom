@@ -10,7 +10,11 @@ Installation Issues
 
 Error: ``ImportError: No module named 'openmm'``
 
-Solution::
+For OpenMM 8+ (recommended)::
+
+    conda install -c conda-forge openmm
+
+For compatibility with older systems::
 
     conda install -c omnia openmm
 
@@ -32,7 +36,13 @@ Solutions:
 
     nvidia-smi  # Should show GPU status
     
-2. Install CUDA-compatible OpenMM::
+2. Install CUDA-compatible OpenMM.
+
+For OpenMM 8+ (recommended)::
+
+    conda install -c conda-forge openmm
+
+For older systems::
 
     conda install -c omnia openmm cudatoolkit
 
