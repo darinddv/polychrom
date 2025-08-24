@@ -74,6 +74,13 @@ reporter.dump_data()
 - Standard scientific Python stack (numpy, scipy, h5py, pandas)
 
 **Install OpenMM first** (required dependency):
+
+For OpenMM 8+ (recommended):
+```bash
+conda install -c conda-forge openmm
+```
+
+For compatibility with older systems:
 ```bash
 conda install -c omnia openmm
 ```

@@ -33,12 +33,15 @@ Installation
 
 **Step 1: Install OpenMM**
 
-Polychrom requires OpenMM, which is best installed through conda::
+Polychrom requires OpenMM, which is best installed through conda. For OpenMM 8+ (recommended), use conda-forge::
+
+    conda install -c conda-forge openmm
+
+For compatibility with older systems, you can still use the omnia channel::
 
     conda install -c omnia openmm
 
-See the `OpenMM installation guide <http://docs.openmm.org/latest/userguide/application.html#installing-openmm>`_ for more details. 
-Adding ``-c conda-forge`` as mentioned in their guide is optional in our experience.
+See the `OpenMM installation guide <http://docs.openmm.org/latest/userguide/application.html#installing-openmm>`_ for more details.
 
 **Step 2: Install Python dependencies**
 
