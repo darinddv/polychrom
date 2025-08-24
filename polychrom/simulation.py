@@ -99,7 +99,7 @@ try:
     import openmm.unit as unit
 except Exception:
     import simtk.openmm as openmm
-    import unit as unit
+    import simtk.unit as unit
 
 from polychrom import forces
 

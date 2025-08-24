@@ -66,7 +66,7 @@ try:
     import openmm.unit as unit
 except Exception:
     import simtk.openmm as openmm
-    import unit as unit
+    import simtk.unit as unit
 
 
 def _prepend_force_name_to_params(force):
