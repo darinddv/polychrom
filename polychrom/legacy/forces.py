@@ -1,7 +1,12 @@
 import numpy as np
-import simtk.openmm as openmm
-import simtk.unit.nanometer as nm
-import simtk.unit as units
+try:
+    import openmm
+    import openmm.unit as unit
+    import openmm.unit.nanometer as nm
+except ImportError:
+    import simtk.openmm as openmm
+    import simtk.unit as unit
+    import simtk.unit.nanometer as nm
 import os
 import pickle
 
@@ -313,7 +318,7 @@ def attractive_interaction(sim_object, i, j, epsilon, sigma=None, length=3):
 
     if sigma is None:
         sigma = 1.1 * sim_object.conlen
-    epsilon = epsilon * units.kilocalorie_per_mole
+    epsilon = epsilon * unit.kilocalorie_per_mole
     if (min(i, j) < length) or (max(i, j) > sim_object.N - length):
         print("!!!!!!!!!bond with %d and %d is out of range!!!!!" % (i, j))
         return
