@@ -6,53 +6,99 @@
 Welcome to the documentation for the polychrom package
 ======================================================
 
-Polychrom is a package for setting up, performing and analyzing polymer simulations of chromosomes. 
-The simulation part is based around VJ Pande's OpenMM library - a GPU-assisted framework for general molecular dynamics simulations. 
-The analysis part is written by the mirnylab. 
+Polychrom is a powerful Python package for setting up, performing and analyzing polymer simulations of chromosomes and chromatin. 
+The simulation engine is built on top of OpenMM, a high-performance GPU-accelerated molecular dynamics framework, 
+while the analysis tools are developed by the Mirnylab to specifically address chromatin organization questions.
+
+**Key Features:**
+
+* High-performance GPU-accelerated molecular dynamics simulations
+* Specialized tools for chromatin loop extrusion modeling  
+* Comprehensive force system for polymer physics
+* Built-in analysis tools for contact maps, polymer statistics, and more
+* Flexible architecture for custom force development
+
+Getting Started
+---------------
+
+New to polychrom? Start here:
+
+* **New users**: Begin with the :doc:`quickstart` guide for a hands-on introduction
+* **Installation help**: See the installation section below
+* **Examples**: Check out the ``examples/`` directory in the repository
+* **API reference**: Browse the detailed module documentation below
 
 Installation
 ------------
 
-Polychrom requires OpenMM, which can be installed through conda: ``conda install -c omnia openmm``. See http://docs.openmm.org/latest/userguide/application.html#installing-openmm . In our experience, adding ``-c conda-forge`` listed in the link above is optional. 
+**Step 1: Install OpenMM**
 
-CUDA is the fastest GPU-assisted backend to OpenMM. You would need to have the required version of CUDA, or install OpenMM compiled for your version of CUDA. 
+Polychrom requires OpenMM, which is best installed through conda::
 
-Other dependencies are simple, and are listed in requirements.txt. All but joblib are installable from either conda/pip, and joblib installs well with pip.
+    conda install -c omnia openmm
 
-Installation errors and possible fixes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+See the `OpenMM installation guide <http://docs.openmm.org/latest/userguide/application.html#installing-openmm>`_ for more details. 
+Adding ``-c conda-forge`` as mentioned in their guide is optional in our experience.
 
-Error:
-After installation, importing openmm or running polychrom code leads to the error:
+**Step 2: Install Python dependencies**
 
-.. code-block:: console
-   
-   version GLIBCXX_3.4.30 not found
+Install polychrom's Python dependencies::
 
-Fix:
+    pip install -r requirements.txt
 
-.. code-block:: console
-   
-   conda install -c conda-forge libstdcxx-ng=12
+**Step 3: GPU Support (Recommended)**
 
+For optimal performance, ensure you have CUDA support:
 
+* Install compatible CUDA drivers for your GPU
+* OpenMM will automatically detect and use CUDA if available
+* CPU-only simulations are possible but much slower
 
-Structure
----------
+**Common Installation Issues**
 
-Polychrom is an API, and each simulation has to be set up as a Python script. Simulations are done using a "simulation" module :py:mod:`polychrom.simulation`. Forces that define the simulation are found in :py:mod:`polychrom.forces` and :py:mod:`polychrom.forcekits` modules. Contactmaps from simulated conformations can be generated using :py:mod:`polychrom.contactmaps` module. Loading and saving individual conformations can be done using :py:mod:`polychrom.polymerutils`, while loading/saving whole trajetories is done using :py:mod:`polychrom.hdf5_format`. P(s), R(s), Rg(s) curves and other analyses can be done using :py:mod:`polychrom.polymer_analyses`. 
+If you encounter the error ``version GLIBCXX_3.4.30 not found`` when importing openmm::
 
+    conda install -c conda-forge libstdcxx-ng=12
 
+Package Structure
+-----------------
+
+Polychrom is designed as a flexible API where each simulation is set up as a Python script. The main components are:
+
+**Core Simulation:**
+  * :py:mod:`polychrom.simulation` - Main simulation class and control
+  * :py:mod:`polychrom.forces` - Individual force definitions  
+  * :py:mod:`polychrom.forcekits` - Combined force systems for common setups
+
+**Data Handling:**
+  * :py:mod:`polychrom.hdf5_format` - Trajectory storage and loading
+  * :py:mod:`polychrom.polymerutils` - Individual conformation utilities
+  * :py:mod:`polychrom.starting_conformations` - Initial polymer configurations
+
+**Analysis:**
+  * :py:mod:`polychrom.polymer_analyses` - Radius of gyration, end-to-end distance, etc.
+  * :py:mod:`polychrom.contactmaps` - Hi-C-like contact map generation
+
+**Utilities:**
+  * :py:mod:`polychrom.param_units` - Physical parameter calculations
+  * :py:mod:`polychrom.pymol_show` - Visualization helpers
+
+Documentation
+-------------
 
 .. toctree::
    :maxdepth: 2   
    
+   quickstart
    polychrom.simulation
+   polychrom.forces
+   polychrom.forcekits
    polychrom.polymerutils
    polychrom.hdf5_format
    polychrom.polymer_analyses
    polychrom.contactmaps
-   polychrom.forces
+   polychrom.starting_conformations
+   polychrom.param_units
    
 
 
