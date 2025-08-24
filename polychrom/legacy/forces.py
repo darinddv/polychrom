@@ -1,12 +1,7 @@
 import numpy as np
-try:
-    import openmm
-    import openmm.unit as unit
-    import openmm.unit.nanometer as nm
-except ImportError:
-    import simtk.openmm as openmm
-    import simtk.unit as unit
-    import simtk.unit.nanometer as nm
+import openmm
+import openmm.unit as unit
+import openmm.unit.nanometer as nm
 import os
 import pickle
 

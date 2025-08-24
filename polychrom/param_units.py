@@ -71,10 +71,7 @@ to be the diameter of the monomer = 1 nm.
 
 
 import numpy as np
-try:
-    import openmm.unit as unit
-except ImportError:
-    from simtk import unit
+import openmm.unit as unit
 
 
 class SimulationParams(object):
@@ -153,9 +150,9 @@ class SimulationParams(object):
         needed if a different scaling with time is observed."""
 
         if not isinstance(Dapp, unit.Quantity):
-            raise ValueError("Dapp should be a simtk.Quantity object")
+            raise ValueError("Dapp should be an openmm.unit.Quantity object")
         if not isinstance(b, unit.Quantity):
-            raise ValueError("b should be a simtk.Quantity object")
+            raise ValueError("b should be an openmm.unit.Quantity object")
         D = np.pi * Dapp**2 / (12 * b**2)  # in m^2 / second
         return D.in_units_of(unit.meter**2 / unit.second)
 

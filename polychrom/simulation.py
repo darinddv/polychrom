@@ -94,12 +94,8 @@ from collections.abc import Iterable
 from typing import Optional, Dict
 import numpy as np
 
-try:
-    import openmm
-    import openmm.unit as unit
-except Exception:
-    import simtk.openmm as openmm
-    import simtk.unit as unit
+import openmm
+import openmm.unit as unit
 
 from polychrom import forces
 

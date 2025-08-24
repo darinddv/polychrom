@@ -40,7 +40,7 @@ Similarly, atan(very_large_number), while defined mathematically, could easily b
 may be larger than the largest allowable float.
 
 Note that basically all nonbonded forces were written before OpenMM introduced a switching function
-http://docs.openmm.org/latest/api-python/generated/simtk.openmm.openmm.CustomNonbondedForce.html Therefore,
+http://docs.openmm.org/latest/api-python/generated/openmm.openmm.CustomNonbondedForce.html Therefore,
 we always manually sticth the value and the first derivative of the force to be 0 at the cutoff distance. For custom
 user-defined forces, it may be better to use switching function instead. This does not apply to custom
 external forces, there stitching is still necessary.
@@ -61,12 +61,8 @@ from collections.abc import Iterable
 
 import numpy as np
 
-try:
-    import openmm
-    import openmm.unit as unit
-except Exception:
-    import simtk.openmm as openmm
-    import simtk.unit as unit
+import openmm
+import openmm.unit as unit
 
 
 def _prepend_force_name_to_params(force):
